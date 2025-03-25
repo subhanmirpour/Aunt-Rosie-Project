@@ -1,4 +1,12 @@
-const Modal = ({ isOpen, onClose, onConfirm, title, message }) => {
+const Modal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  message, 
+  confirmText = 'Delete',
+  confirmStyle = 'bg-red-600 hover:bg-red-700'
+}) => {
   if (!isOpen) return null;
 
   return (
@@ -15,9 +23,9 @@ const Modal = ({ isOpen, onClose, onConfirm, title, message }) => {
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded"
+            className={`px-4 py-2 text-white rounded ${confirmStyle}`}
           >
-            Delete
+            {confirmText}
           </button>
         </div>
       </div>

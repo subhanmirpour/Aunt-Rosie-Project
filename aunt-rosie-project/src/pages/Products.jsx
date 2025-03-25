@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
 import Modal from '../components/Modal';
+import AddProductModal from '../components/AddProductModal';
+import ProductTable from '../components/ProductTable';
+import { validateProductData } from '../utils/formatters';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -9,10 +12,22 @@ const Products = () => {
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, product: null });
+  const [editModal, setEditModal] = useState({ isOpen: false, productId: null, data: null });
+  const [addModal, setAddModal] = useState(false);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
   const itemsPerPage = 5;
 
   // Calculate total pages
   const totalPages = Math.ceil(totalCount / itemsPerPage);
+
+  // Reset editing state when page changes
+  useEffect(() => {
+    setEditingId(null);
+    setIsEditing(false);
+    setEditModal({ isOpen: false, productId: null, data: null });
+  }, [page]);
 
   // Fetch products on page load
   useEffect(() => {
@@ -67,9 +82,55 @@ const Products = () => {
     return () => {
       mounted = false;
     };
-  }, [page]); // Added page to dependencies
+  }, [page]);
+
+  // Add product handler
+  async function handleAddProduct(productData) {
+    setIsAddingProduct(true);
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .insert([productData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding product:', error.message);
+        toast.error('Failed to add product');
+        return;
+      }
+
+      toast.success('Product added successfully');
+      
+      // Update total count
+      setTotalCount(prev => prev + 1);
+      
+      // If we're on the first page, update the products list
+      if (page === 0) {
+        setProducts(prev => {
+          const newProducts = [data, ...prev];
+          if (newProducts.length > itemsPerPage) {
+            newProducts.pop(); // Remove last item if we've exceeded items per page
+          }
+          return newProducts;
+        });
+      }
+
+      // Close modal and reset form
+      setAddModal(false);
+    } catch (err) {
+      console.error('Unexpected error during add:', err);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsAddingProduct(false);
+    }
+  }
 
   // Delete handler
+  async function handleDelete(product) {
+    setDeleteModal({ isOpen: true, product });
+  }
+
   async function deleteProduct(id) {
     try {
       const { error } = await supabase.from('products').delete().eq('productid', id);
@@ -95,9 +156,62 @@ const Products = () => {
     }
   }
 
-  // Format price helper function
-  const formatPrice = (price) => {
-    return typeof price === 'number' ? `$${price.toFixed(2)}` : 'N/A';
+  // Edit handler
+  const handleEdit = async (productId, editedData) => {
+    if (!productId) {
+      setEditingId(null);
+      setIsEditing(false);
+      return;
+    }
+
+    if (!editedData) {
+      setEditingId(productId);
+      setIsEditing(true);
+      return;
+    }
+
+    // Validate the edited data
+    const { isValid } = validateProductData(editedData);
+    if (!isValid) {
+      toast.error('Please fix the validation errors');
+      return;
+    }
+
+    // Show confirmation modal
+    setEditModal({ isOpen: true, productId, data: editedData });
+  };
+
+  // Handle edit confirmation
+  const handleEditConfirm = async () => {
+    const { productId, data: editedData } = editModal;
+    setIsEditing(true);
+
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update(editedData)
+        .eq('productid', productId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
+      setProducts(prev =>
+        prev.map(p =>
+          p.productid === productId ? { ...p, ...editedData } : p
+        )
+      );
+
+      toast.success('Product updated successfully');
+      setEditingId(null);
+      setEditModal({ isOpen: false, productId: null, data: null });
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast.error('Failed to update product');
+    } finally {
+      setIsEditing(false);
+    }
   };
 
   // Generate page numbers
@@ -118,9 +232,39 @@ const Products = () => {
         onConfirm={() => deleteProduct(deleteModal.product?.productid)}
         title="Confirm Deletion"
         message={`Are you sure you want to delete "${deleteModal.product?.productname}"? This action cannot be undone.`}
+        confirmText="Delete"
+        confirmStyle="bg-red-600 hover:bg-red-700"
+      />
+
+      <Modal
+        isOpen={editModal.isOpen}
+        onClose={() => {
+          setEditModal({ isOpen: false, productId: null, data: null });
+          setEditingId(null);
+        }}
+        onConfirm={handleEditConfirm}
+        title="Confirm Edit"
+        message="Are you sure you want to save these changes?"
+        confirmText="Save Changes"
+        confirmStyle="bg-green-600 hover:bg-green-700"
       />
       
-      <h2 className="text-3xl font-bold text-rose-700 mb-6">Product List</h2>
+      <AddProductModal
+        isOpen={addModal}
+        onClose={() => setAddModal(false)}
+        onAdd={handleAddProduct}
+        isLoading={isAddingProduct}
+      />
+      
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-rose-700">Product List</h2>
+        <button
+          onClick={() => setAddModal(true)}
+          className="px-4 py-2 bg-rose-600 text-white rounded hover:bg-rose-700 transition-colors"
+        >
+          Add Product
+        </button>
+      </div>
   
       {isLoading ? (
         <p className="text-gray-500">Loading products...</p>
@@ -128,52 +272,13 @@ const Products = () => {
         <p className="text-gray-500">No products found.</p>
       ) : (
         <>
-          <table className="w-full border text-sm mb-4">
-            <thead className="bg-slate-100">
-              <tr>
-                <th className="text-left p-2">Name</th>
-                <th className="text-left p-2">Category</th>
-                <th className="text-left p-2">Size</th>
-                <th className="text-left p-2">Price</th>
-                <th className="text-left p-2">Stock</th>
-                <th className="text-left p-2">Description</th>
-                <th className="text-left p-2">Dietary Info</th>
-                <th className="text-left p-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((product) => (
-                <tr key={product.productid} className="border-t hover:bg-gray-50">
-                  <td className="p-2">{product.productname}</td>
-                  <td className="p-2">{product.category}</td>
-                  <td className="p-2">{product.size || 'N/A'}</td>
-                  <td className="p-2">{formatPrice(product.price)}</td>
-                  <td className="p-2">{product.stockquantity || 0}</td>
-                  <td className="p-2">{product.description || 'No description'}</td>
-                  <td className="p-2">
-                    {product.allergeninfo && (
-                      <div className="text-red-600 text-xs mb-1">
-                        Allergens: {product.allergeninfo}
-                      </div>
-                    )}
-                    {product.dietaryinfo && (
-                      <div className="text-green-600 text-xs">
-                        {product.dietaryinfo}
-                      </div>
-                    )}
-                  </td>
-                  <td className="p-2">
-                    <button
-                      className="text-red-500 hover:underline"
-                      onClick={() => setDeleteModal({ isOpen: true, product })}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <ProductTable
+            products={products}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+            isEditing={isEditing}
+            editingId={editingId}
+          />
           
           {/* Pagination Controls */}
           <div className="flex flex-col items-center gap-4 mt-4">
