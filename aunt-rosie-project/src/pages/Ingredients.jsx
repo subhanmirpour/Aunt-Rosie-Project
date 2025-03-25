@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import IngredientTable from '../components/IngredientTable';
 import AddIngredientModal from '../components/AddIngredientModal';
-import EditIngredientModal from '../components/EditIngredientModal';
 import Modal from '../components/Modal';
 import {
   fetchIngredients,
@@ -11,18 +10,29 @@ import {
   deleteIngredient
 } from '../lib/supabase/ingredients';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 5;
 
 const Ingredients = () => {
   const [ingredients, setIngredients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, ingredient: null });
+  const [editModal, setEditModal] = useState({ isOpen: false, ingredientId: null, data: null });
   const [addModal, setAddModal] = useState(false);
-  const [editModal, setEditModal] = useState(false);
-  const [deleteModal, setDeleteModal] = useState(false);
-  const [selectedIngredient, setSelectedIngredient] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isAddingIngredient, setIsAddingIngredient] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+
+  // Reset editing state when page changes
+  useEffect(() => {
+    setEditingId(null);
+    setIsEditing(false);
+    setEditModal({ isOpen: false, ingredientId: null, data: null });
+  }, [page]);
 
   const loadIngredients = async () => {
     try {
@@ -42,154 +52,209 @@ const Ingredients = () => {
     loadIngredients();
   }, [page]);
 
-  const handlePageChange = (newPage) => {
-    setPage(newPage);
-  };
-
   const handleAdd = async (data) => {
+    setIsAddingIngredient(true);
     try {
-      setIsProcessing(true);
       await addIngredient(data);
       toast.success('Ingredient added successfully');
       setAddModal(false);
-      if (page === 1) {
+      if (page === 0) {
         loadIngredients();
       } else {
-        setPage(1);
+        setPage(0);
       }
     } catch (error) {
       console.error('Error adding ingredient:', error);
       toast.error('Failed to add ingredient');
     } finally {
-      setIsProcessing(false);
+      setIsAddingIngredient(false);
     }
   };
 
-  const handleEdit = (ingredient) => {
-    setSelectedIngredient(ingredient);
-    setEditModal(true);
+  const handleEdit = async (ingredientId, editedData) => {
+    if (!ingredientId) {
+      setEditingId(null);
+      setIsEditing(false);
+      return;
+    }
+
+    if (!editedData) {
+      setEditingId(ingredientId);
+      setIsEditing(true);
+      return;
+    }
+
+    // Show confirmation modal
+    setEditModal({ isOpen: true, ingredientId, data: editedData });
   };
 
-  const handleUpdate = async (data) => {
+  const handleEditConfirm = async () => {
+    const { ingredientId, data: editedData } = editModal;
+    setIsEditing(true);
+
     try {
-      setIsProcessing(true);
-      await updateIngredient(selectedIngredient.id, data);
+      // Convert string values to numbers where needed
+      const processedData = {
+        ...editedData,
+        costperunit: parseFloat(editedData.costperunit),
+        currentstock: parseInt(editedData.currentstock),
+        reorderthreshold: parseInt(editedData.reorderthreshold)
+      };
+
+      await updateIngredient(ingredientId, processedData);
+      
+      // Update local state
+      setIngredients(prev =>
+        prev.map(i =>
+          i.ingredientid === ingredientId ? { ...i, ...processedData } : i
+        )
+      );
+
       toast.success('Ingredient updated successfully');
-      setEditModal(false);
-      loadIngredients();
+      setEditingId(null);
+      setEditModal({ isOpen: false, ingredientId: null, data: null });
     } catch (error) {
       console.error('Error updating ingredient:', error);
       toast.error('Failed to update ingredient');
     } finally {
-      setIsProcessing(false);
+      setIsEditing(false);
     }
   };
 
-  const handleDeleteClick = (ingredient) => {
-    setSelectedIngredient(ingredient);
-    setDeleteModal(true);
+  const handleDelete = (ingredient) => {
+    setDeleteModal({ isOpen: true, ingredient });
   };
 
-  const handleDelete = async () => {
+  const handleDeleteConfirm = async () => {
     try {
-      setIsProcessing(true);
-      await deleteIngredient(selectedIngredient.id);
+      await deleteIngredient(deleteModal.ingredient.ingredientid);
       toast.success('Ingredient deleted successfully');
-      setDeleteModal(false);
-      if (ingredients.length === 1 && page > 1) {
-        setPage(page - 1);
+      setDeleteModal({ isOpen: false, ingredient: null });
+      
+      if (ingredients.length === 1 && page > 0) {
+        setPage(prev => prev - 1);
       } else {
         loadIngredients();
       }
     } catch (error) {
       console.error('Error deleting ingredient:', error);
       toast.error('Failed to delete ingredient');
-    } finally {
-      setIsProcessing(false);
     }
   };
 
-  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
+  // Generate page numbers
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    for (let i = 0; i < totalPages; i++) {
+      pageNumbers.push(i);
+    }
+    return pageNumbers;
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Ingredients</h1>
-        <button
-          onClick={() => setAddModal(true)}
-          className="px-4 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:ring-offset-2"
-        >
-          Add Ingredient
-        </button>
-      </div>
-
-      <IngredientTable
-        ingredients={ingredients}
-        onEdit={handleEdit}
-        onDelete={handleDeleteClick}
-        isLoading={isLoading}
+    <div className="p-6 max-w-5xl mx-auto">
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, ingredient: null })}
+        onConfirm={handleDeleteConfirm}
+        title="Confirm Deletion"
+        message={`Are you sure you want to delete "${deleteModal.ingredient?.ingredientname}"? This action cannot be undone.`}
+        confirmText="Delete"
+        confirmStyle="bg-red-600 hover:bg-red-700"
       />
 
-      {!isLoading && ingredients.length > 0 && (
-        <div className="mt-4 flex justify-between items-center">
-          <div className="text-sm text-gray-700">
-            Showing {((page - 1) * ITEMS_PER_PAGE) + 1} to{' '}
-            {Math.min(page * ITEMS_PER_PAGE, totalCount)} of {totalCount} ingredients
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => handlePageChange(page - 1)}
-              disabled={page === 1}
-              className={`px-3 py-1 rounded ${
-                page === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border'
-              }`}
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => handlePageChange(page + 1)}
-              disabled={page >= totalPages}
-              className={`px-3 py-1 rounded ${
-                page >= totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-gray-50 border'
-              }`}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
-
+      <Modal
+        isOpen={editModal.isOpen}
+        onClose={() => {
+          setEditModal({ isOpen: false, ingredientId: null, data: null });
+          setEditingId(null);
+        }}
+        onConfirm={handleEditConfirm}
+        title="Confirm Edit"
+        message="Are you sure you want to save these changes?"
+        confirmText="Save Changes"
+        confirmStyle="bg-green-600 hover:bg-green-700"
+      />
+      
       <AddIngredientModal
         isOpen={addModal}
         onClose={() => setAddModal(false)}
         onSubmit={handleAdd}
-        isLoading={isProcessing}
+        isLoading={isAddingIngredient}
       />
+      
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold text-rose-700">Ingredient List</h2>
+        <button
+          onClick={() => setAddModal(true)}
+          className="px-4 py-2 bg-rose-600 text-white rounded hover:bg-rose-700 transition-colors"
+        >
+          Add Ingredient
+        </button>
+      </div>
+  
+      {isLoading ? (
+        <p className="text-gray-500">Loading ingredients...</p>
+      ) : ingredients.length === 0 ? (
+        <p className="text-gray-500">No ingredients found.</p>
+      ) : (
+        <>
+          <IngredientTable
+            ingredients={ingredients}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+            isEditing={isEditing}
+            editingId={editingId}
+          />
+          
+          {/* Pagination Controls */}
+          <div className="flex flex-col items-center gap-4 mt-4">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className={`px-3 py-1 rounded ${
+                  page === 0
+                    ? 'bg-gray-200 cursor-not-allowed'
+                    : 'bg-rose-600 text-white hover:bg-rose-700'
+                }`}
+              >
+                Previous
+              </button>
+              
+              {getPageNumbers().map((pageNum) => (
+                <button
+                  key={pageNum}
+                  onClick={() => setPage(pageNum)}
+                  className={`px-3 py-1 rounded ${
+                    page === pageNum
+                      ? 'bg-rose-600 text-white'
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                >
+                  {pageNum + 1}
+                </button>
+              ))}
 
-      <EditIngredientModal
-        isOpen={editModal}
-        onClose={() => setEditModal(false)}
-        onSubmit={handleUpdate}
-        isLoading={isProcessing}
-        ingredient={selectedIngredient}
-      />
-
-      <Modal
-        isOpen={deleteModal}
-        onClose={() => setDeleteModal(false)}
-        title="Delete Ingredient"
-        onConfirm={handleDelete}
-        confirmText="Delete"
-        confirmStyle="bg-red-600 hover:bg-red-700"
-      >
-        <p className="text-sm text-gray-500">
-          Are you sure you want to delete {selectedIngredient?.ingredientname}? This action cannot be undone.
-        </p>
-      </Modal>
+              <button
+                onClick={() => setPage(p => p + 1)}
+                disabled={page >= totalPages - 1}
+                className={`px-3 py-1 rounded ${
+                  page >= totalPages - 1
+                    ? 'bg-gray-200 cursor-not-allowed'
+                    : 'bg-rose-600 text-white hover:bg-rose-700'
+                }`}
+              >
+                Next
+              </button>
+            </div>
+            
+            <div className="text-sm text-gray-600">
+              Showing {page * ITEMS_PER_PAGE + 1} to {Math.min((page + 1) * ITEMS_PER_PAGE, totalCount)} of {totalCount} items
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
