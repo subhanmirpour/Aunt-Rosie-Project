@@ -1,5 +1,5 @@
 import React from 'react';
-import { StarIcon, ArrowDownIcon } from '@heroicons/react/24/solid';
+import { StarIcon, ArrowUpIcon } from '@heroicons/react/24/solid';
 
 export default function About() {
   return (
@@ -43,7 +43,7 @@ export default function About() {
             "Excellence in every detail, passion in every product."
           </blockquote>
           <div className="mt-4 flex justify-center">
-            <ArrowDownIcon className="h-6 w-6 text-gray-500 animate-bounce" />
+            <ArrowUpIcon className="h-6 w-6 text-gray-500 animate-bounce" />
           </div>
         </footer>
       </div>
