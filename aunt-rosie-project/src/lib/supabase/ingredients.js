@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from './supabaseClient';
 
 export const fetchIngredients = async ({ page = 0, itemsPerPage = 5 } = {}) => {
   try {

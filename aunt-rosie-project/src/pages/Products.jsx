@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
 import Modal from '../components/Modal';
 import AddProductModal from '../components/AddProductModal';
