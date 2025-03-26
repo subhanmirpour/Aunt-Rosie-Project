@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ThresholdBadge from './ThresholdBadge';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 const IngredientTable = ({ 
   ingredients, 
@@ -98,9 +99,10 @@ const IngredientTable = ({
     return (
       <button
         onClick={() => onDelete(ingredient)}
-        className="text-red-600 hover:text-red-900"
+        className="p-2 text-gray-400 hover:text-red-500"
+        title="Delete ingredient"
       >
-        Delete
+        <TrashIcon className="h-5 w-5" />
       </button>
     );
   };

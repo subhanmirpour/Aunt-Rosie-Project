@@ -15,9 +15,9 @@ export default function ProductSelect({ value, onChange, className = '', exclude
   const availableProducts = products.filter(product => !excludeIds.includes(product.productid));
 
   const formatProductOption = (product) => {
-    const size = product.unitsize ? ` (${product.unitsize}${product.unitmeasure || ''})` : '';
-    const stock = product.quantityinstock ? ` - ${product.quantityinstock} in stock` : '';
-    const price = product.unitprice ? ` - $${Number(product.unitprice).toFixed(2)}` : ' - Price N/A';
+    const size = product.size ? ` (${product.size})` : '';
+    const stock = product.stockquantity ? ` - ${product.stockquantity} in stock` : '';
+    const price = product.price ? ` - $${Number(product.price).toFixed(2)}` : ' - Price N/A';
     return `${product.productname}${size}${price}${stock}`;
   };
 

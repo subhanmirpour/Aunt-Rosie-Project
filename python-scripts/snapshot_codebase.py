@@ -4,7 +4,7 @@ import json
 # === CONFIG ===
 SRC_DIR = r"C:\Users\User\Documents\YEAR3DURHAMCOLLEGE\Semester6\INFT-3201-03-DatabaseDevelopment2\Aunt-Rosie-Project\aunt-rosie-project\src"
 OUTPUT_JSON = "code_snapshot.json"
-INCLUDE_EXTENSIONS = {".js", ".jsx", ".ts", ".tsx", ".css", ".json"}
+INCLUDE_EXTENSIONS = {".js", ".jsx", ".ts", ".tsx", ".css", ".json"} 
 
 def get_file_tree(directory):
     snapshot = {}

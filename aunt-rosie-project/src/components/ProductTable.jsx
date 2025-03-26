@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { formatPrice } from '../utils/formatters';
+import { TrashIcon } from '@heroicons/react/24/outline';
 
 const ProductTable = ({ 
   products, 
@@ -131,10 +132,11 @@ const ProductTable = ({
                 </div>
               ) : (
                 <button
-                  className="text-red-500 hover:underline"
+                  className="p-2 text-gray-400 hover:text-red-500"
                   onClick={() => onDelete(product)}
+                  title="Delete product"
                 >
-                  Delete
+                  <TrashIcon className="h-5 w-5" />
                 </button>
               )}
             </td>

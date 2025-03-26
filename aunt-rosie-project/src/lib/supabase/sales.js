@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 export async function fetchProducts() {
   const { data, error } = await supabase
     .from('products')
-    .select('productid, productname, unitprice, quantityinstock, unitsize, unitmeasure')
+    .select('productid, productname, price, stockquantity, size')
     .order('productname');
   
   if (error) throw error;
@@ -40,7 +40,7 @@ export async function createSale({ sale, items }) {
     saleid: saleData.saleid,
     productid: item.productid,
     quantitysold: item.quantity,
-    unitprice: item.unitprice
+    unitprice: item.price
   }));
 
   // Insert all sale items
