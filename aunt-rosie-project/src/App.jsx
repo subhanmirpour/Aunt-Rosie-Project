@@ -2,11 +2,13 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import Products from './pages/Products';
 import Ingredients from './pages/Ingredients';
 import SalesForm from './pages/SalesForm';
+import About from './pages/About';
 import { 
   HomeIcon, 
   ShoppingCartIcon, 
   CubeIcon,
-  CurrencyDollarIcon 
+  CurrencyDollarIcon, 
+  UserIcon
 } from '@heroicons/react/24/outline';
 
 // eslint-disable-next-line no-unused-vars
@@ -38,6 +40,8 @@ function App() {
           <NavLink to="/products" icon={ShoppingCartIcon}>Products</NavLink>
           <NavLink to="/ingredients" icon={CubeIcon}>Ingredients</NavLink>
           <NavLink to="/sales" icon={CurrencyDollarIcon}>Sales</NavLink>
+          <NavLink to="/about" icon={UserIcon}>About</NavLink>
+
         </div>
       </div>
       <Routes>
@@ -45,6 +49,7 @@ function App() {
         <Route path="/products" element={<Products />} />
         <Route path="/ingredients" element={<Ingredients />} />
         <Route path="/sales" element={<SalesForm />} />
+        <Route path="/about" element={<About />} />
       </Routes>
     </Router>
   );
