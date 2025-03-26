@@ -37,7 +37,7 @@ const Ingredients = () => {
   const loadIngredients = async () => {
     try {
       setIsLoading(true);
-      const { data, count } = await fetchIngredients(page, ITEMS_PER_PAGE);
+      const { data, count } = await fetchIngredients({ page, itemsPerPage: ITEMS_PER_PAGE });
       setIngredients(data);
       setTotalCount(count);
     } catch (error) {
