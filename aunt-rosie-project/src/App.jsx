@@ -13,6 +13,7 @@ import Products from './pages/Products';
 import Ingredients from './pages/Ingredients';
 import SalesForm from './pages/SalesForm';
 import About from './pages/About';
+import Unauthorized from './pages/Unauthorized'; // <-- NEW
 import ProtectedRoute from './components/ProtectedRoute';
 
 import {
@@ -70,25 +71,16 @@ function Layout() {
       {!isLoginPage && (
         <div className="bg-white shadow px-4 mb-4">
           <div className="max-w-7xl mx-auto flex items-center gap-2 h-16">
-            <NavLink to="/dashboard" icon={HomeIcon}>
-              Dashboard
-            </NavLink>
-            <NavLink to="/products" icon={ShoppingCartIcon}>
-              Products
-            </NavLink>
-            <NavLink to="/ingredients" icon={CubeIcon}>
-              Ingredients
-            </NavLink>
-            <NavLink to="/sales" icon={CurrencyDollarIcon}>
-              Sales
-            </NavLink>
-            <NavLink to="/about" icon={UserIcon}>
-              About
-            </NavLink>
+            <NavLink to="/dashboard" icon={HomeIcon}>Dashboard</NavLink>
+            <NavLink to="/products" icon={ShoppingCartIcon}>Products</NavLink>
+            <NavLink to="/ingredients" icon={CubeIcon}>Ingredients</NavLink>
+            <NavLink to="/sales" icon={CurrencyDollarIcon}>Sales</NavLink>
+            <NavLink to="/about" icon={UserIcon}>About</NavLink>
             {isLoggedIn && <LogoutButton />}
           </div>
         </div>
       )}
+
       <Routes>
         <Route path="/" element={<Login />} />
         <Route
@@ -99,10 +91,32 @@ function Layout() {
             </ProtectedRoute>
           }
         />
-        <Route path="/products" element={<Products />} />
-        <Route path="/ingredients" element={<Ingredients />} />
-        <Route path="/sales" element={<SalesForm />} />
+        <Route
+          path="/products"
+          element={
+            <ProtectedRoute role="admin">
+              <Products />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ingredients"
+          element={
+            <ProtectedRoute role="kitchen">
+              <Ingredients />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sales"
+          element={
+            <ProtectedRoute role="sales">
+              <SalesForm />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/about" element={<About />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
       </Routes>
     </>
   );
@@ -117,3 +131,4 @@ function App() {
 }
 
 export default App;
+  
