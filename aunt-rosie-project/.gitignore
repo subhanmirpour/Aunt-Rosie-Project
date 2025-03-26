@@ -28,3 +28,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# scripts
+python-scripts/snapshot_codebase.py
+python-scripts/code_snapshot.json
