@@ -5,7 +5,7 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 mt-10">
-      <h1 className="text-3xl font-bold text-rose-700 mb-4">Welcome, {user?.email || 'Guest'}!</h1>
+      <h1 className="text-3xl font-bold text-rose-700 mb-4">Welcome, {user?.username || 'Guest'}!</h1>
       <p className="text-gray-600 mb-6">Here’s an overview of your pie empire 🍓🥧</p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -13,8 +13,9 @@ import Products from './pages/Products';
 import Ingredients from './pages/Ingredients';
 import SalesForm from './pages/SalesForm';
 import About from './pages/About';
-import Unauthorized from './pages/Unauthorized'; // <-- NEW
+import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
+import UserManagement from './pages/UserManagement'; 
 
 import {
   HomeIcon,
@@ -75,6 +76,7 @@ function Layout() {
             <NavLink to="/products" icon={ShoppingCartIcon}>Products</NavLink>
             <NavLink to="/ingredients" icon={CubeIcon}>Ingredients</NavLink>
             <NavLink to="/sales" icon={CurrencyDollarIcon}>Sales</NavLink>
+            <NavLink to="/usermanagement" icon={UserIcon}>User Management</NavLink>
             <NavLink to="/about" icon={UserIcon}>About</NavLink>
             {isLoggedIn && <LogoutButton />}
           </div>
@@ -112,6 +114,14 @@ function Layout() {
           element={
             <ProtectedRoute role="sales">
               <SalesForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/usermanagement"
+          element={
+            <ProtectedRoute role="admin">
+              <UserManagement />
             </ProtectedRoute>
           }
         />

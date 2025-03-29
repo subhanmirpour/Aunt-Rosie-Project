@@ -7,8 +7,7 @@ export default function Login() {
   const [username, setUsername] = useState(''); 
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  // Removed role state and dropdown since role comes from the DB
-  const [isRegistering, setIsRegistering] = useState(false); // if needed for future registration logic
+  const [isRegistering, setIsRegistering] = useState(false); 
 
   useEffect(() => {
     const user = localStorage.getItem('user');
