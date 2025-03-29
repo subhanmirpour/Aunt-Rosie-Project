@@ -15,6 +15,7 @@ import SalesForm from './pages/SalesForm';
 import About from './pages/About';
 import Unauthorized from './pages/Unauthorized'; // <-- NEW
 import ProtectedRoute from './components/ProtectedRoute';
+import SalesTracker from './pages/SalesTracker'; // Import tracker
 
 import {
   HomeIcon,
@@ -76,6 +77,7 @@ function Layout() {
             <NavLink to="/ingredients" icon={CubeIcon}>Ingredients</NavLink>
             <NavLink to="/sales" icon={CurrencyDollarIcon}>Sales</NavLink>
             <NavLink to="/about" icon={UserIcon}>About</NavLink>
+            <NavLink to="/sales-tracker" icon={CurrencyDollarIcon}>Sales Tracker</NavLink>
             {isLoggedIn && <LogoutButton />}
           </div>
         </div>
@@ -112,6 +114,14 @@ function Layout() {
           element={
             <ProtectedRoute role="sales">
               <SalesForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sales-tracker"
+          element={
+            <ProtectedRoute>
+              <SalesTracker />
             </ProtectedRoute>
           }
         />
