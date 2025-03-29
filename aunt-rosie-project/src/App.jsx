@@ -17,6 +17,7 @@ import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserManagement from './pages/UserManagement';
 import Timetable from './pages/Timetable';
+import LabelGeneration from './pages/LabelGeneration';
 
 import {
   HomeIcon,
@@ -25,6 +26,7 @@ import {
   CurrencyDollarIcon,
   UserIcon,
   ClockIcon,
+  TagIcon,
 } from '@heroicons/react/24/outline';
 
 function NavLink({ to, icon: Icon, children }) {
@@ -80,6 +82,7 @@ function Layout() {
             <NavLink to="/sales" icon={CurrencyDollarIcon}>Sales</NavLink>
             <NavLink to="/usermanagement" icon={UserIcon}>User Management</NavLink>
             <NavLink to="/timetable" icon={ClockIcon}>Time Table</NavLink>
+            <NavLink to="/labelgeneration" icon={TagIcon}>Label Generation</NavLink>
             <NavLink to="/about" icon={UserIcon}>About</NavLink>
             {isLoggedIn && <LogoutButton />}
           </div>
@@ -133,6 +136,14 @@ function Layout() {
           element={
             <ProtectedRoute>
               <Timetable />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/labelgeneration"
+          element={
+            <ProtectedRoute role="admin">
+              <LabelGeneration />
             </ProtectedRoute>
           }
         />
