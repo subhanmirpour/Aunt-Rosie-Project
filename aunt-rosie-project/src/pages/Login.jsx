@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase/supabaseClient'; // adjust the path if needed
+import { supabase } from '../lib/supabase/supabaseClient'; 
 
 export default function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState(''); // using username now
+  const [username, setUsername] = useState(''); 
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('admin');
-  const [isRegistering, setIsRegistering] = useState(false);
   const [error, setError] = useState('');
+  // Removed role state and dropdown since role comes from the DB
+  const [isRegistering, setIsRegistering] = useState(false); // if needed for future registration logic
 
   useEffect(() => {
     const user = localStorage.getItem('user');
@@ -38,9 +38,25 @@ export default function Login() {
       return;
     }
     
-    // Successful login: store user info and navigate
+    // Successful login: determine role based on roleid from the database
     const loggedInUser = data[0];
-    localStorage.setItem('user', JSON.stringify({ username: loggedInUser.username, role }));
+    let mappedRole;
+    switch (loggedInUser.roleid) {
+      case 1:
+        mappedRole = 'admin';
+        break;
+      case 2:
+        mappedRole = 'sales';
+        break;
+      case 3:
+        mappedRole = 'kitchen';
+        break;
+      default:
+        mappedRole = 'unknown';
+    }
+
+    // Store the user details with the role from the DB
+    localStorage.setItem('user', JSON.stringify({ username: loggedInUser.username, role: mappedRole }));
     navigate('/dashboard');
   };
 
@@ -69,18 +85,6 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-
-          {/* Role Selector */}
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="w-full px-4 py-2 border rounded"
-          >
-            <option value="admin">Admin</option>
-            <option value="kitchen">Kitchen Assistant</option>
-            <option value="sales">Sales Staff</option>
-          </select>
-
           <button
             type="submit"
             className="w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2 rounded transition-transform duration-300 hover:scale-105 active:scale-95"
@@ -88,7 +92,6 @@ export default function Login() {
             {isRegistering ? 'Register' : 'Login'}
           </button>
         </form>
-
         <p className="mt-4 text-sm text-gray-600">
           {isRegistering ? 'Already have an account?' : 'Don’t have an account?'}{' '}
           <button
