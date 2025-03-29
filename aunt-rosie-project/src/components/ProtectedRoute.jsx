@@ -6,7 +6,7 @@ export default function ProtectedRoute({ children, role }) {
 
   if (!user) return <Navigate to="/" />;
 
-  // Admins can access everything
+  // Admins can access everything. Otherwise, if a specific role is required, ensure it matches.
   if (role && user.role !== role && user.role !== 'admin') {
     return <Navigate to="/unauthorized" />;
   }
