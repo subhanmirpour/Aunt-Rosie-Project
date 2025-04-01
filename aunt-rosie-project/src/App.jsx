@@ -16,6 +16,7 @@ import About from './pages/About';
 import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
 import SalesTracker from './pages/SalesTracker';
+import Footer from './components/Footer'; // ✅ Footer imported
 
 import {
   HomeIcon,
@@ -125,10 +126,12 @@ function Layout() {
             </ProtectedRoute>
           }
         />
-       
         <Route path="/about" element={<About />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
       </Routes>
+
+      {/* ✅ Footer shows on all pages except login */}
+      {!isLoginPage && <Footer />}
     </>
   );
 }
