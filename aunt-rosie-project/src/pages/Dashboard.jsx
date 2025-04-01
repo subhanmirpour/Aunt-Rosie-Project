@@ -1,59 +1,126 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  // ✅ Navigate to Sales Tracker with a filter param
+  const [totals, setTotals] = useState({
+    daily: 0,
+    weekly: 0,
+    monthly: 0,
+    quarterly: 0,
+  });
+  const [topProduct, setTopProduct] = useState(null);
+
+  useEffect(() => {
+    const sales = JSON.parse(localStorage.getItem('sales')) || [];
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+
+    const last7 = new Date(now - 7 * 86400000);
+    const last30 = new Date(now - 30 * 86400000);
+    const last90 = new Date(now - 90 * 86400000);
+
+    const dailySales = sales.filter((s) => s.saledate === today);
+    const weeklySales = sales.filter((s) => new Date(s.saledate) >= last7);
+    const monthlySales = sales.filter((s) => new Date(s.saledate) >= last30);
+    const quarterlySales = sales.filter((s) => new Date(s.saledate) >= last90);
+
+    setTotals({
+      daily: dailySales.reduce((sum, s) => sum + s.saletotal, 0),
+      weekly: weeklySales.reduce((sum, s) => sum + s.saletotal, 0),
+      monthly: monthlySales.reduce((sum, s) => sum + s.saletotal, 0),
+      quarterly: quarterlySales.reduce((sum, s) => sum + s.saletotal, 0),
+    });
+
+    // 🔥 Top Product Calculation
+    const productCounts = {};
+    sales.forEach((sale) => {
+      sale.items?.forEach((item) => {
+        const name = item.productid || 'Unknown';
+        productCounts[name] = (productCounts[name] || 0) + Number(item.quantity || 0);
+      });
+    });
+
+    const top = Object.entries(productCounts).reduce((max, curr) =>
+      curr[1] > max[1] ? curr : max,
+      ['None', 0]
+    );
+    setTopProduct(top);
+  }, []);
+
   const handleCardClick = (period) => {
     navigate(`/sales-tracker?period=${period}`);
   };
 
   return (
     <div className="max-w-6xl mx-auto p-6 bg-white shadow rounded-lg">
-      <h1 className="text-3xl font-bold text-rose-700 mb-6">📊 Dashboard</h1>
+      <h1 className="text-3xl font-bold text-rose-700 mb-6">👋 Welcome back, Aunt Rosie!</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Daily Sales Card */}
-        <div
-          className="cursor-pointer bg-rose-100 p-4 rounded-lg shadow hover:bg-rose-200 transition"
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <Card
+          title="📅 Daily Sales"
+          value={totals.daily}
+          description="View daily sales trends"
+          color="rose"
           onClick={() => handleCardClick('daily')}
-        >
-          <h2 className="text-lg font-semibold">📅 Daily Sales</h2>
-          <p className="text-xl font-bold text-rose-600">$1,250.00</p>
-          <p className="text-sm text-gray-600 mt-2">View daily sales trends</p>
-        </div>
-
-        {/* Weekly Sales Card */}
-        <div
-          className="cursor-pointer bg-blue-100 p-4 rounded-lg shadow hover:bg-blue-200 transition"
+        />
+        <Card
+          title="📈 Weekly Sales"
+          value={totals.weekly}
+          description="Explore weekly performance"
+          color="blue"
           onClick={() => handleCardClick('weekly')}
-        >
-          <h2 className="text-lg font-semibold">📈 Weekly Sales</h2>
-          <p className="text-xl font-bold text-blue-600">$8,750.00</p>
-          <p className="text-sm text-gray-600 mt-2">Explore weekly performance</p>
-        </div>
-
-        {/* 30-Day Sales Card */}
-        <div
-          className="cursor-pointer bg-green-100 p-4 rounded-lg shadow hover:bg-green-200 transition"
+        />
+        <Card
+          title="📊 30-Day Sales"
+          value={totals.monthly}
+          description="Check monthly trends"
+          color="green"
           onClick={() => handleCardClick('monthly')}
-        >
-          <h2 className="text-lg font-semibold">📊 30-Day Sales</h2>
-          <p className="text-xl font-bold text-green-600">$35,120.00</p>
-          <p className="text-sm text-gray-600 mt-2">Check monthly trends</p>
-        </div>
-
-        {/* Quarterly Sales Card */}
-        <div
-          className="cursor-pointer bg-yellow-100 p-4 rounded-lg shadow hover:bg-yellow-200 transition"
+        />
+        <Card
+          title="📆 Quarterly Sales"
+          value={totals.quarterly}
+          description="Analyze quarterly growth"
+          color="yellow"
           onClick={() => handleCardClick('quarterly')}
-        >
-          <h2 className="text-lg font-semibold">📆 Quarterly Sales</h2>
-          <p className="text-xl font-bold text-yellow-600">$92,500.00</p>
-          <p className="text-sm text-gray-600 mt-2">Analyze quarterly growth</p>
-        </div>
+        />
+        <Card
+          title="📍 Location-Based Sales"
+          value={''}
+          description="See which markets perform best"
+          color="indigo"
+          onClick={() => navigate('/sales-tracker')}
+        />
       </div>
+
+      {topProduct && (
+        <div className="mt-8 text-center text-green-700 font-medium">
+          🥧 Best Seller: <strong>{topProduct[0]}</strong> with <strong>{topProduct[1]}</strong> units sold
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Card({ title, value, description, onClick, color }) {
+  const bgColors = {
+    rose: 'bg-rose-100 hover:bg-rose-200 text-rose-600',
+    blue: 'bg-blue-100 hover:bg-blue-200 text-blue-600',
+    green: 'bg-green-100 hover:bg-green-200 text-green-600',
+    yellow: 'bg-yellow-100 hover:bg-yellow-200 text-yellow-600',
+    indigo: 'bg-indigo-100 hover:bg-indigo-200 text-indigo-600',
+  };
+
+  return (
+    <div
+      onClick={onClick}
+      className={`cursor-pointer p-4 rounded-lg shadow transition ${bgColors[color] || 'bg-gray-100 text-gray-600'}`}
+    >
+      <h2 className="text-lg font-semibold">{title}</h2>
+      {value !== '' && <p className="text-xl font-bold">${value.toFixed(2)}</p>}
+      <p className="text-sm text-gray-600 mt-2">{description}</p>
     </div>
   );
 }
