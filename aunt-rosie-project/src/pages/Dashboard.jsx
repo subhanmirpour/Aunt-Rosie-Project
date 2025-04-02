@@ -1,53 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { getSalesSummary } from '../lib/supabase/sales';
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  const [totals, setTotals] = useState({
-    daily: 0,
-    weekly: 0,
-    monthly: 0,
-    quarterly: 0,
+  const { data: summary, isLoading, error } = useQuery({
+    queryKey: ['salesSummary'],
+    queryFn: getSalesSummary
   });
-  const [topProduct, setTopProduct] = useState(null);
-
-  useEffect(() => {
-    const sales = JSON.parse(localStorage.getItem('sales')) || [];
-    const today = new Date().toISOString().split('T')[0];
-    const now = new Date();
-
-    const last7 = new Date(now - 7 * 86400000);
-    const last30 = new Date(now - 30 * 86400000);
-    const last90 = new Date(now - 90 * 86400000);
-
-    const dailySales = sales.filter((s) => s.saledate === today);
-    const weeklySales = sales.filter((s) => new Date(s.saledate) >= last7);
-    const monthlySales = sales.filter((s) => new Date(s.saledate) >= last30);
-    const quarterlySales = sales.filter((s) => new Date(s.saledate) >= last90);
-
-    setTotals({
-      daily: dailySales.reduce((sum, s) => sum + s.saletotal, 0),
-      weekly: weeklySales.reduce((sum, s) => sum + s.saletotal, 0),
-      monthly: monthlySales.reduce((sum, s) => sum + s.saletotal, 0),
-      quarterly: quarterlySales.reduce((sum, s) => sum + s.saletotal, 0),
-    });
-
-    // 🔥 Top Product Calculation
-    const productCounts = {};
-    sales.forEach((sale) => {
-      sale.items?.forEach((item) => {
-        const name = item.productid || 'Unknown';
-        productCounts[name] = (productCounts[name] || 0) + Number(item.quantity || 0);
-      });
-    });
-
-    const top = Object.entries(productCounts).reduce(
-      (max, curr) => (curr[1] > max[1] ? curr : max),
-      ['None', 0]
-    );
-    setTopProduct(top);
-  }, []);
 
   const handleCardClick = (period) => {
     navigate(`/sales-tracker?period=${period}`);
@@ -60,38 +22,40 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold text-rose-700 mb-4">
         Welcome, {user?.username || 'Guest'}!
       </h1>
-      <p className="text-gray-600 mb-6">Here’s an overview of your pie empire 🍓🥧</p>
+      <p className="text-gray-600 mb-6">Here's an overview of your pie empire 🍓🥧</p>
 
       <div className="bg-white p-6 rounded shadow mb-6">
         <h2 className="text-xl font-semibold text-rose-600 mb-2">Today's Sales</h2>
-        <p className="text-gray-700">{`$${totals.daily.toFixed(2)}`}</p>
+        <p className="text-gray-700">
+          {isLoading ? 'Loading...' : error ? 'Error loading data' : `$${summary?.dailyTotal.toFixed(2)}`}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <Card
           title="📅 Daily Sales"
-          value={totals.daily}
+          value={summary?.dailyTotal || 0}
           description="View daily sales trends"
           color="rose"
           onClick={() => handleCardClick('daily')}
         />
         <Card
           title="📈 Weekly Sales"
-          value={totals.weekly}
+          value={summary?.weeklyTotal || 0}
           description="Explore weekly performance"
           color="blue"
           onClick={() => handleCardClick('weekly')}
         />
         <Card
           title="📊 30-Day Sales"
-          value={totals.monthly}
+          value={summary?.thirtyDayTotal || 0}
           description="Check monthly trends"
           color="green"
           onClick={() => handleCardClick('monthly')}
         />
         <Card
           title="📆 Quarterly Sales"
-          value={totals.quarterly}
+          value={summary?.quarterlyTotal || 0}
           description="Analyze quarterly growth"
           color="yellow"
           onClick={() => handleCardClick('quarterly')}
@@ -104,13 +68,6 @@ export default function Dashboard() {
           onClick={() => navigate('/sales-tracker')}
         />
       </div>
-
-      {topProduct && (
-        <div className="mt-8 text-center text-green-700 font-medium">
-          🥧 Best Seller: <strong>{topProduct[0]}</strong> with{' '}
-          <strong>{topProduct[1]}</strong> units sold
-        </div>
-      )}
     </div>
   );
 }
