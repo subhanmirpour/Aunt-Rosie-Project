@@ -5,7 +5,6 @@ export default function About() {
   return (
     <div className="relative bg-gradient-to-b from-white to-gray-100 py-12">
       <div className="max-w-5xl mx-auto p-6 space-y-6 bg-white bg-opacity-80 rounded-lg shadow-lg">
-        {/* Decorative animated stars */}
         <div className="flex justify-center space-x-2">
           <StarIcon className="h-6 w-6 text-rose-500 animate-bounce" />
           <StarIcon className="h-6 w-6 text-rose-500 animate-bounce delay-150" />
