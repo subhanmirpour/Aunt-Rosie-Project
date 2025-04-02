@@ -16,7 +16,7 @@ import About from './pages/About';
 import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
 import SalesTracker from './pages/SalesTracker';
-import Footer from './components/Footer'; // ✅ Footer imported
+import Footer from './components/Footer';
 import UserManagement from './pages/UserManagement';
 import Timetable from './pages/Timetable';
 import LabelGeneration from './pages/LabelGeneration';
@@ -131,6 +131,10 @@ function Layout() {
           element={
             <ProtectedRoute>
               <SalesTracker />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/usermanagement"
           element={
             <ProtectedRoute role="admin">

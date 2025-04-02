@@ -42,8 +42,8 @@ export default function Dashboard() {
       });
     });
 
-    const top = Object.entries(productCounts).reduce((max, curr) =>
-      curr[1] > max[1] ? curr : max,
+    const top = Object.entries(productCounts).reduce(
+      (max, curr) => (curr[1] > max[1] ? curr : max),
       ['None', 0]
     );
     setTopProduct(top);
@@ -53,15 +53,19 @@ export default function Dashboard() {
     navigate(`/sales-tracker?period=${period}`);
   };
 
+  const user = JSON.parse(localStorage.getItem('user'));
+
   return (
     <div className="max-w-4xl mx-auto px-4 mt-10">
-      <h1 className="text-3xl font-bold text-rose-700 mb-4">Welcome, {user?.username || 'Guest'}!</h1>
+      <h1 className="text-3xl font-bold text-rose-700 mb-4">
+        Welcome, {user?.username || 'Guest'}!
+      </h1>
       <p className="text-gray-600 mb-6">Here’s an overview of your pie empire 🍓🥧</p>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded shadow">
-          <h2 className="text-xl font-semibold text-rose-600 mb-2">Today's Sales</h2>
-          <p className="text-gray-700">$342.50</p>
-        </div>
+
+      <div className="bg-white p-6 rounded shadow mb-6">
+        <h2 className="text-xl font-semibold text-rose-600 mb-2">Today's Sales</h2>
+        <p className="text-gray-700">{`$${totals.daily.toFixed(2)}`}</p>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <Card
@@ -103,7 +107,8 @@ export default function Dashboard() {
 
       {topProduct && (
         <div className="mt-8 text-center text-green-700 font-medium">
-          🥧 Best Seller: <strong>{topProduct[0]}</strong> with <strong>{topProduct[1]}</strong> units sold
+          🥧 Best Seller: <strong>{topProduct[0]}</strong> with{' '}
+          <strong>{topProduct[1]}</strong> units sold
         </div>
       )}
     </div>
@@ -122,10 +127,12 @@ function Card({ title, value, description, onClick, color }) {
   return (
     <div
       onClick={onClick}
-      className={`cursor-pointer p-4 rounded-lg shadow transition ${bgColors[color] || 'bg-gray-100 text-gray-600'}`}
+      className={`cursor-pointer p-4 rounded-lg shadow transition ${
+        bgColors[color] || 'bg-gray-100 text-gray-600'
+      }`}
     >
       <h2 className="text-lg font-semibold">{title}</h2>
-      {value !== '' && <p className="text-xl font-bold">${value.toFixed(2)}</p>}
+      {value !== '' && <p className="text-xl font-bold">{`$${value.toFixed(2)}`}</p>}
       <p className="text-sm text-gray-600 mt-2">{description}</p>
     </div>
   );
