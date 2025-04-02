@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createSale } from '../lib/supabase/sales';
 import LocationSelect from './LocationSelect';
 import SalesLineItem from './SalesLineItem';
 import AlertModal from './AlertModal';
+import CustomerSearch from './CustomerSearch';
+import Select from 'react-select';
 import { PlusIcon } from '@heroicons/react/24/outline';
 
 export default function SalesFormContainer() {
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     saledate: new Date().toISOString().split('T')[0],
     locationid: '',
+    paymentmethod: '',
+    customerid: null,
     items: [{ productid: '', quantity: '', unitprice: 0 }]
   });
 
@@ -19,6 +24,16 @@ export default function SalesFormContainer() {
     message: ''
   });
 
+  // Listen for product updates
+  useEffect(() => {
+    const handleProductUpdate = () => {
+      queryClient.invalidateQueries(['products']);
+    };
+
+    window.addEventListener('productsUpdated', handleProductUpdate);
+    return () => window.removeEventListener('productsUpdated', handleProductUpdate);
+  }, [queryClient]);
+
   // ✅ Trigger salesUpdated event after successful sale
   const { mutate: submitSale, isLoading } = useMutation({
     mutationFn: createSale,
@@ -27,6 +42,8 @@ export default function SalesFormContainer() {
       setFormData({
         saledate: new Date().toISOString().split('T')[0],
         locationid: '',
+        paymentmethod: '',
+        customerid: null,
         items: [{ productid: '', quantity: '', unitprice: 0 }]
       });
 
@@ -58,6 +75,15 @@ export default function SalesFormContainer() {
       return false;
     }
 
+    if (!formData.paymentmethod) {
+      setAlert({
+        isOpen: true,
+        title: 'Validation Error',
+        message: 'Please select a payment method'
+      });
+      return false;
+    }
+
     if (!formData.items.length) {
       setAlert({
         isOpen: true,
@@ -68,7 +94,7 @@ export default function SalesFormContainer() {
     }
 
     const invalidItems = formData.items.filter(
-      item => !item.productid || !item.quantity
+      item => !item.productid || !item.quantity || !item.unitprice
     );
 
     if (invalidItems.length) {
@@ -92,7 +118,7 @@ export default function SalesFormContainer() {
 
     // Calculate total
     const saletotal = formData.items.reduce(
-      (sum, item) => sum + (item.quantity * item.unitprice),
+      (sum, item) => sum + (Number(item.quantity) * Number(item.unitprice)),
       0
     );
 
@@ -101,9 +127,15 @@ export default function SalesFormContainer() {
       sale: {
         saledate: new Date(`${formData.saledate}T${new Date().toTimeString().slice(0, 8)}`),
         locationid: formData.locationid,
+        paymentmethod: formData.paymentmethod,
+        customerid: formData.customerid,
         saletotal
       },
-      items: formData.items
+      items: formData.items.map(item => ({
+        ...item,
+        quantity: Number(item.quantity),
+        unitprice: Number(item.unitprice)
+      }))
     });
   };
 
@@ -151,7 +183,7 @@ export default function SalesFormContainer() {
   // Move total calculation to a useMemo hook to optimize performance
   const total = React.useMemo(() =>
     formData.items.reduce(
-      (sum, item) => sum + ((item.quantity || 0) * (item.unitprice || 0)),
+      (sum, item) => sum + ((Number(item.quantity) || 0) * (Number(item.unitprice) || 0)),
       0
     ),
     [formData.items]
@@ -160,6 +192,13 @@ export default function SalesFormContainer() {
   const usedProductIds = formData.items
     .filter(item => item.productid)
     .map(item => item.productid);
+
+  const paymentMethods = [
+    { value: 'Cash', label: 'Cash' },
+    { value: 'Debit', label: 'Debit' },
+    { value: 'Credit', label: 'Credit' },
+    { value: 'E-transfer', label: 'E-transfer' }
+  ];
 
   return (
     <>
@@ -184,6 +223,33 @@ export default function SalesFormContainer() {
             <LocationSelect
               value={formData.locationid}
               onChange={(locationid) => setFormData(prev => ({ ...prev, locationid }))}
+              className="mt-1"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Payment Method
+            </label>
+            <Select
+              value={paymentMethods.find(method => method.value === formData.paymentmethod)}
+              onChange={(option) => setFormData(prev => ({ ...prev, paymentmethod: option.value }))}
+              options={paymentMethods}
+              placeholder="Select how the customer paid..."
+              className="mt-1"
+              classNamePrefix="react-select"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              Customer (Optional)
+            </label>
+            <CustomerSearch
+              value={formData.customerid ? { value: formData.customerid, label: '' } : null}
+              onChange={(option) => setFormData(prev => ({ ...prev, customerid: option?.value || null }))}
               className="mt-1"
             />
           </div>

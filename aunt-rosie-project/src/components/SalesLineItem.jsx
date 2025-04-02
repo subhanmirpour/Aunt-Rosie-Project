@@ -18,7 +18,7 @@ export default function SalesLineItem({
             onUpdate(index, {
               ...item,
               productid: product.productid,
-              price: product.price
+              unitprice: product.price
             });
           }}
           excludeIds={excludeProductIds}
@@ -40,7 +40,7 @@ export default function SalesLineItem({
       </div>
 
       <div className="w-32 text-right">
-        ${((item.quantity || 0) * (item.price || 0)).toFixed(2)}
+        ${((item.quantity || 0) * (item.unitprice || 0)).toFixed(2)}
       </div>
 
       <button
