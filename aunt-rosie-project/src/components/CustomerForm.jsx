@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const initialFormData = {
   firstname: '',
@@ -104,6 +104,7 @@ const CustomerForm = ({ onSubmit, onCancel, isLoading, submitLabel = 'Add Custom
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     
     const allTouched = Object.keys(formData).reduce((acc, key) => ({
       ...acc,
@@ -171,7 +172,7 @@ const CustomerForm = ({ onSubmit, onCancel, isLoading, submitLabel = 'Add Custom
   );
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" noValidate>
       {renderField('firstname', 'First Name')}
       {renderField('lastname', 'Last Name')}
       {renderField('email', 'Email')}

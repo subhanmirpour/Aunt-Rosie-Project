@@ -20,6 +20,7 @@ import Footer from './components/Footer';
 import UserManagement from './pages/UserManagement';
 import Timetable from './pages/Timetable';
 import LabelGeneration from './pages/LabelGeneration';
+import AddCustomer from './pages/AddCustomer';
 
 import {
   HomeIcon,
@@ -130,6 +131,14 @@ function Layout() {
             element={
               <ProtectedRoute role="sales">
                 <SalesForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-customer"
+            element={
+              <ProtectedRoute role="sales">
+                <AddCustomer />
               </ProtectedRoute>
             }
           />
