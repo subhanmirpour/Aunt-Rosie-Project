@@ -19,6 +19,7 @@ export default function SalesFormContainer() {
     message: ''
   });
 
+  // ✅ Trigger salesUpdated event after successful sale
   const { mutate: submitSale, isLoading } = useMutation({
     mutationFn: createSale,
     onSuccess: () => {
@@ -28,11 +29,15 @@ export default function SalesFormContainer() {
         locationid: '',
         items: [{ productid: '', quantity: '', unitprice: 0 }]
       });
+
       setAlert({
         isOpen: true,
         title: 'Success',
         message: 'Sale recorded successfully!'
       });
+
+      // 🛎️ Emit salesUpdated event to notify SalesTracker
+      window.dispatchEvent(new Event('salesUpdated'));
     },
     onError: (error) => {
       setAlert({
@@ -80,14 +85,14 @@ export default function SalesFormContainer() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     // Calculate total
     const saletotal = formData.items.reduce(
-      (sum, item) => sum + (item.quantity * item.price),
+      (sum, item) => sum + (item.quantity * item.unitprice),
       0
     );
 
@@ -144,9 +149,9 @@ export default function SalesFormContainer() {
   };
 
   // Move total calculation to a useMemo hook to optimize performance
-  const total = React.useMemo(() => 
+  const total = React.useMemo(() =>
     formData.items.reduce(
-      (sum, item) => sum + ((item.quantity || 0) * (item.price || 0)),
+      (sum, item) => sum + ((item.quantity || 0) * (item.unitprice || 0)),
       0
     ),
     [formData.items]
@@ -171,7 +176,7 @@ export default function SalesFormContainer() {
               className="mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Location
@@ -213,7 +218,7 @@ export default function SalesFormContainer() {
           <div className="text-xl font-semibold">
             Total: ${total.toFixed(2)}
           </div>
-          
+
           <button
             type="submit"
             disabled={isLoading}
@@ -232,4 +237,4 @@ export default function SalesFormContainer() {
       />
     </>
   );
-} 
+}

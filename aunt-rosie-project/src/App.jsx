@@ -15,6 +15,8 @@ import SalesForm from './pages/SalesForm';
 import About from './pages/About';
 import Unauthorized from './pages/Unauthorized';
 import ProtectedRoute from './components/ProtectedRoute';
+import SalesTracker from './pages/SalesTracker';
+import Footer from './components/Footer'; // ✅ Footer imported
 import UserManagement from './pages/UserManagement';
 import Timetable from './pages/Timetable';
 import LabelGeneration from './pages/LabelGeneration';
@@ -80,6 +82,7 @@ function Layout() {
             <NavLink to="/products" icon={ShoppingCartIcon}>Products</NavLink>
             <NavLink to="/ingredients" icon={CubeIcon}>Ingredients</NavLink>
             <NavLink to="/sales" icon={CurrencyDollarIcon}>Sales</NavLink>
+            <NavLink to="/sales-tracker" icon={CurrencyDollarIcon}>Sales Tracker</NavLink>
             <NavLink to="/usermanagement" icon={UserIcon}>User Management</NavLink>
             <NavLink to="/timetable" icon={ClockIcon}>Time Table</NavLink>
             <NavLink to="/labelgeneration" icon={TagIcon}>Label Generation</NavLink>
@@ -124,6 +127,10 @@ function Layout() {
           }
         />
         <Route
+          path="/sales-tracker"
+          element={
+            <ProtectedRoute>
+              <SalesTracker />
           path="/usermanagement"
           element={
             <ProtectedRoute role="admin">
@@ -150,6 +157,9 @@ function Layout() {
         <Route path="/about" element={<About />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
       </Routes>
+
+      {/* ✅ Footer shows on all pages except login */}
+      {!isLoginPage && <Footer />}
     </>
   );
 }
@@ -163,4 +173,3 @@ function App() {
 }
 
 export default App;
-  
