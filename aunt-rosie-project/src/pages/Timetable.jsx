@@ -8,6 +8,8 @@ const Timetable = () => {
   const [editingFields, setEditingFields] = useState({});
   const [updateStatus, setUpdateStatus] = useState({});
   const [locations, setLocations] = useState([]);
+  const [sortBy, setSortBy] = useState('dateworked');
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' for ascending, 'desc' for descending
 
   // Fetch timetable data from Supabase, joining with employees and locations
   const fetchTimetable = async () => {
@@ -44,6 +46,27 @@ const Timetable = () => {
     fetchTimetable();
     fetchLocations();
   }, []);
+
+  // Function to sort entries based on the selected sort option and order
+  const getSortedEntries = () => {
+    return [...entries].sort((a, b) => {
+      let result = 0;
+      if (sortBy === 'dateworked') {
+        result = new Date(a.dateworked) - new Date(b.dateworked);
+      } else if (sortBy === 'employeeid') {
+        const aId = a.employee ? a.employee.employeeid : a.employeeid;
+        const bId = b.employee ? b.employee.employeeid : b.employeeid;
+        result = aId - bId;
+      } else if (sortBy === 'location') {
+        const aLoc = a.location ? a.location.locationname : a.locationid;
+        const bLoc = b.location ? b.location.locationname : b.locationid;
+        result = aLoc.localeCompare(bLoc);
+      } else if (sortBy === 'hoursworked') {
+        result = parseFloat(a.hoursworked) - parseFloat(b.hoursworked);
+      }
+      return sortOrder === 'asc' ? result : -result;
+    });
+  };
 
   // Set up the editing fields for the selected entry
   const handleEditClick = (hoursid, entry) => {
@@ -125,113 +148,143 @@ const Timetable = () => {
       ) : entries.length === 0 ? (
         <p className="text-gray-500">No timetable entries found.</p>
       ) : (
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 border-b">Employee ID</th>
-              <th className="py-2 px-4 border-b">Employee Name</th>
-              <th className="py-2 px-4 border-b">Date Worked</th>
-              <th className="py-2 px-4 border-b">Hours Worked</th>
-              <th className="py-2 px-4 border-b">Location</th>
-              <th className="py-2 px-4 border-b">Pay Rate</th>
-              <th className="py-2 px-4 border-b">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry) => {
-              const isEditing = editingFields.hasOwnProperty(entry.hoursid);
-              return (
-                <tr key={entry.hoursid} className="text-center">
-                  <td className="py-2 px-4 border-b">
-                    {entry.employee ? entry.employee.employeeid : entry.employeeid}
-                  </td>
-                  <td className="py-2 px-4 border-b">
-                    {entry.employee ? entry.employee.firstname : 'N/A'}
-                  </td>
-                  <td className="py-2 px-4 border-b">
-                    {isEditing ? (
-                      <input
-                        type="date"
-                        value={editingFields[entry.hoursid].dateworked}
-                        onChange={(e) =>
-                          handleFieldChange(entry.hoursid, 'dateworked', e.target.value)
-                        }
-                        className="border rounded p-1"
-                      />
-                    ) : (
-                      entry.dateworked
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border-b">
-                    {isEditing ? (
-                      <input
-                        type="number"
-                        step="0.1"
-                        value={editingFields[entry.hoursid].hoursworked}
-                        onChange={(e) =>
-                          handleFieldChange(entry.hoursid, 'hoursworked', e.target.value)
-                        }
-                        className="border rounded p-1 w-20"
-                      />
-                    ) : (
-                      entry.hoursworked
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border-b">
-                    {isEditing ? (
-                      <select
-                        value={editingFields[entry.hoursid].locationid}
-                        onChange={(e) =>
-                          handleFieldChange(entry.hoursid, 'locationid', e.target.value)
-                        }
-                        className="border rounded p-1"
-                      >
-                        {locations.map((loc) => (
-                          <option key={loc.locationid} value={loc.locationid}>
-                            {loc.locationname}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      entry.location ? entry.location.locationname : entry.locationid
-                    )}
-                  </td>
-                  <td className="py-2 px-4 border-b">{entry.payrateattime}</td>
-                  <td className="py-2 px-4 border-b">
-                    {isEditing ? (
-                      <div className="flex items-center justify-center space-x-2">
-                        <button
-                          onClick={() => updateEmployeeHours(entry.hoursid)}
-                          className="bg-rose-600 hover:bg-rose-700 text-white py-1 px-3 rounded"
+        <>
+          <div className="mb-4 flex items-center">
+            <label htmlFor="sortBy" className="mr-2 font-semibold">
+              Sort by:
+            </label>
+            <select
+              id="sortBy"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="border rounded p-1 mr-4"
+            >
+              <option value="dateworked">Date Worked</option>
+              <option value="employeeid">Employee ID</option>
+              <option value="location">Location</option>
+              <option value="hoursworked">Hours Worked</option>
+            </select>
+            <label htmlFor="sortOrder" className="mr-2 font-semibold">
+              Order:
+            </label>
+            <select
+              id="sortOrder"
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="border rounded p-1"
+            >
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
+          <table className="min-w-full bg-white border border-gray-200">
+            <thead>
+              <tr>
+                <th className="py-2 px-4 border-b">Employee ID</th>
+                <th className="py-2 px-4 border-b">Employee Name</th>
+                <th className="py-2 px-4 border-b">Date Worked</th>
+                <th className="py-2 px-4 border-b">Hours Worked</th>
+                <th className="py-2 px-4 border-b">Location</th>
+                <th className="py-2 px-4 border-b">Pay Rate</th>
+                <th className="py-2 px-4 border-b">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {getSortedEntries().map((entry) => {
+                const isEditing = editingFields.hasOwnProperty(entry.hoursid);
+                return (
+                  <tr key={entry.hoursid} className="text-center">
+                    <td className="py-2 px-4 border-b">
+                      {entry.employee ? entry.employee.employeeid : entry.employeeid}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      {entry.employee ? entry.employee.firstname : 'N/A'}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      {isEditing ? (
+                        <input
+                          type="date"
+                          value={editingFields[entry.hoursid].dateworked}
+                          onChange={(e) =>
+                            handleFieldChange(entry.hoursid, 'dateworked', e.target.value)
+                          }
+                          className="border rounded p-1"
+                        />
+                      ) : (
+                        entry.dateworked
+                      )}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={editingFields[entry.hoursid].hoursworked}
+                          onChange={(e) =>
+                            handleFieldChange(entry.hoursid, 'hoursworked', e.target.value)
+                          }
+                          className="border rounded p-1 w-20"
+                        />
+                      ) : (
+                        entry.hoursworked
+                      )}
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      {isEditing ? (
+                        <select
+                          value={editingFields[entry.hoursid].locationid}
+                          onChange={(e) =>
+                            handleFieldChange(entry.hoursid, 'locationid', e.target.value)
+                          }
+                          className="border rounded p-1"
                         >
-                          Save
-                        </button>
+                          {locations.map((loc) => (
+                            <option key={loc.locationid} value={loc.locationid}>
+                              {loc.locationname}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        entry.location ? entry.location.locationname : entry.locationid
+                      )}
+                    </td>
+                    <td className="py-2 px-4 border-b">{entry.payrateattime}</td>
+                    <td className="py-2 px-4 border-b">
+                      {isEditing ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <button
+                            onClick={() => updateEmployeeHours(entry.hoursid)}
+                            className="bg-rose-600 hover:bg-rose-700 text-white py-1 px-3 rounded"
+                          >
+                            Save
+                          </button>
+                          <button
+                            onClick={() => cancelEdit(entry.hoursid)}
+                            className="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded"
+                          >
+                            Cancel
+                          </button>
+                          {updateStatus[entry.hoursid] && (
+                            <span className="text-green-600 font-semibold">
+                              {updateStatus[entry.hoursid]}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
                         <button
-                          onClick={() => cancelEdit(entry.hoursid)}
-                          className="bg-gray-600 hover:bg-gray-700 text-white py-1 px-3 rounded"
+                          onClick={() => handleEditClick(entry.hoursid, entry)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded"
                         >
-                          Cancel
+                          Edit
                         </button>
-                        {updateStatus[entry.hoursid] && (
-                          <span className="text-green-600 font-semibold">
-                            {updateStatus[entry.hoursid]}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => handleEditClick(entry.hoursid, entry)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded"
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
       )}
     </div>
   );
